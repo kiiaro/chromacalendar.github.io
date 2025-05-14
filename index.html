@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calendário ChromaSolar Minimalista</title>
+  <title>ChromaSolar Minimalista</title>
   <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@100;300;400;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <style>
@@ -20,9 +20,11 @@
       --night-event-bg: #333333;
       --night-event-text: #fe6816;
     }
+
     * {
       box-sizing: border-box;
     }
+
     body {
       margin: 0;
       padding: 20px;
@@ -34,6 +36,7 @@
       align-items: center;
       transition: background 0.3s ease, color 0.3s ease;
     }
+
     header {
       width: 100%;
       height: 80px;
@@ -41,7 +44,54 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       margin-bottom: 20px;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    .nav-tabs {
+      display: flex;
+      gap: 20px;
+    }
+
+    .nav-tab {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-family: var(--font-family);
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding: 10px 20px;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .nav-tab:hover {
+      color: var(--background-color);
+      transform: translateY(-2px);
+    }
+
+    .nav-tab.active {
+      color: var(--background-color);
+    }
+
+    .nav-tab::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--background-color);
+      transition: width 0.3s ease;
+    }
+
+    .nav-tab:hover::after,
+    .nav-tab.active::after {
+      width: 100%;
+    }
+
     .main-content {
       display: flex;
       justify-content: center;
@@ -49,7 +99,8 @@
       width: 100%;
       max-width: 1000px;
     }
-    .calendar {
+
+    .calendar, .blog {
       width: 100%;
       max-width: 1000px;
       background: linear-gradient(180deg, rgba(254,104,22,0.1) 0%, var(--background-color) 100%);
@@ -57,11 +108,18 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       padding: 30px;
       transition: transform 0.3s ease, background 0.3s ease;
+      display: none;
     }
-    .calendar:hover {
+
+    .calendar.active, .blog.active {
+      display: block;
+    }
+
+    .calendar:hover, .blog:hover {
       transform: scale(1.01);
       box-shadow: 0 6px 30px rgba(254,104,22,0.3);
     }
+
     .calendar-header {
       display: flex;
       justify-content: space-between;
@@ -70,6 +128,7 @@
       flex-wrap: wrap;
       gap: 10px;
     }
+
     .calendar-header button {
       background: var(--primary-color);
       border: none;
@@ -86,20 +145,24 @@
       justify-content: center;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
+
     .calendar-header button:hover {
       background: var(--secondary-color);
       transform: scale(1.15) rotate(10deg);
       box-shadow: 0 4px 15px rgba(254,104,22,0.4);
     }
+
     .calendar-header button:active {
       animation: pulseArrow 0.2s ease;
       transform: scale(1.05);
     }
+
     .calendar-header button:focus {
       outline: none;
       box-shadow: 0 0 0 3px rgba(254,104,22,0.3);
     }
-    #add-event-btn {
+
+    #add-event-btn, #add-post-btn {
       position: relative;
       background: var(--primary-color);
       border-radius: 25px;
@@ -116,7 +179,8 @@
       width: 50px;
       height: 50px;
     }
-    #add-event-btn::before {
+
+    #add-event-btn::before, #add-post-btn::before {
       content: '';
       position: absolute;
       top: 50%;
@@ -129,37 +193,45 @@
       transition: width 0.6s ease, height 0.6s ease;
       pointer-events: none;
     }
-    #add-event-btn:active::before {
+
+    #add-event-btn:active::before, #add-post-btn:active::before {
       width: 200px;
       height: 200px;
       opacity: 0;
     }
-    #add-event-btn:hover {
+
+    #add-event-btn:hover, #add-post-btn:hover {
       background: var(--secondary-color);
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(254,104,22,0.5);
       animation: pulseGlow 1.5s infinite ease-in-out;
     }
-    #add-event-btn i {
+
+    #add-event-btn i, #add-post-btn i {
       transition: transform 0.3s ease;
     }
-    #add-event-btn:hover i {
+
+    #add-event-btn:hover i, #add-post-btn:hover i {
       transform: rotate(90deg);
     }
+
     @keyframes bounceIn {
       0% { transform: scale(0.8); opacity: 0; }
       60% { transform: scale(1.1); opacity: 1; }
       100% { transform: scale(1); }
     }
+
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 4px 15px rgba(254,104,22,0.4); }
       50% { box-shadow: 0 6px 25px rgba(254,104,22,0.7); }
     }
+
     @keyframes pulseArrow {
       0% { transform: scale(1.15); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1.05); }
     }
+
     .month-year {
       font-size: 2rem;
       font-weight: 900;
@@ -167,6 +239,7 @@
       transition: color 0.3s ease;
       position: relative;
     }
+
     .month-year::after {
       content: '';
       position: absolute;
@@ -177,15 +250,17 @@
       background: var(--primary-color);
       transition: width 0.3s ease;
     }
+
     .month-year:hover::after {
       width: 100%;
     }
-    .days-of-week,
-    .days {
+
+    .days-of-week, .days {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       transition: opacity 0.3s ease;
     }
+
     .days-of-week div {
       text-align: center;
       font-weight: 700;
@@ -195,6 +270,7 @@
       font-size: 0.9rem;
       position: relative;
     }
+
     .days-of-week div::after {
       content: '';
       position: absolute;
@@ -206,9 +282,11 @@
       transform: translateX(-50%);
       transition: width 0.3s ease;
     }
+
     .days-of-week div:hover::after {
       width: 50%;
     }
+
     .day {
       background: transparent;
       border: 1px solid transparent;
@@ -223,16 +301,19 @@
       position: relative;
       overflow: hidden;
     }
+
     .day:hover {
       border-color: var(--secondary-color);
       background: rgba(254,104,22,0.05);
       transform: scale(1.05);
     }
+
     .day.selected {
       background-color: rgba(254,104,22,0.1);
       border-color: var(--primary-color);
       box-shadow: 0 0 15px rgba(254,104,22,0.3);
     }
+
     .day-number {
       font-weight: 700;
       margin-bottom: 5px;
@@ -240,14 +321,17 @@
       font-size: 1.2rem;
       transition: transform 0.3s ease;
     }
+
     .day:hover .day-number {
       transform: scale(1.1);
     }
+
     .events {
       max-height: 70px;
       overflow-y: auto;
       flex-grow: 1;
     }
+
     .event {
       background-color: var(--event-bg);
       color: #ffffff;
@@ -262,10 +346,12 @@
       cursor: pointer;
       position: relative;
     }
+
     .event:hover {
       background-color: var(--event-bg-dark);
       transform: translateX(5px);
     }
+
     .event:hover::after {
       content: attr(data-full);
       position: absolute;
@@ -284,20 +370,25 @@
       pointer-events: none;
       animation: fadeInTooltip 0.3s ease;
     }
+
     @keyframes fadeInTooltip {
       from { opacity: 0; transform: translate(-50%, -10px); }
       to { opacity: 1; transform: translate(-50%, 0); }
     }
+
     ::-webkit-scrollbar {
       width: 4px;
     }
+
     ::-webkit-scrollbar-thumb {
       background: var(--primary-color);
       border-radius: 20px;
     }
+
     ::-webkit-scrollbar-track {
       background: transparent;
     }
+
     .event-sidebar {
       width: 300px;
       margin-left: 20px;
@@ -307,9 +398,11 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       transition: background 0.3s ease, transform 0.3s ease;
     }
+
     .event-sidebar:hover {
       transform: translateY(-5px);
     }
+
     .event-sidebar h3 {
       font-size: 1.5rem;
       color: var(--primary-color);
@@ -319,6 +412,7 @@
       transition: color 0.3s ease;
       position: relative;
     }
+
     .event-sidebar h3::after {
       content: '';
       position: absolute;
@@ -330,9 +424,11 @@
       transform: translateX(-50%);
       transition: width 0.3s ease;
     }
+
     .event-sidebar h3:hover::after {
       width: 100px;
     }
+
     .event-card {
       background: linear-gradient(135deg, var(--event-bg) 0%, var(--event-bg-dark) 100%);
       color: #ffffff;
@@ -343,10 +439,133 @@
       transition: background 0.3s ease, transform 0.3s ease;
       cursor: pointer;
     }
+
     .event-card:hover {
       transform: scale(1.03);
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
+
+    .blog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .blog-header h2 {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary-color);
+      transition: color 0.3s ease;
+      position: relative;
+    }
+
+    .blog-header h2::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--primary-color);
+      transition: width 0.3s ease;
+    }
+
+    .blog-header h2:hover::after {
+      width: 100%;
+    }
+
+    .blog-posts {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .blog-post {
+      background: linear-gradient(135deg, var(--event-bg) 0%, var(--event-bg-dark) 100%);
+      color: #ffffff;
+      padding: 15px;
+      border-radius: 10px;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .blog-post:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 20px rgba(254,104,22,0.3);
+    }
+
+    .blog-post h4 {
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .blog-post p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .blog-post .post-meta {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+
+    .blog-post .comments {
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+
+    .blog-post .comment {
+      background: rgba(255,255,255,0.1);
+      padding: 5px 10px;
+      border-radius: 8px;
+      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+
+    .blog-post .comment:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .blog-post .comment button {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: color 0.3s ease;
+    }
+
+    .blog-post .comment button:hover {
+      color: #d9534f;
+    }
+
+    .blog-post .add-comment {
+      background: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.3s ease, transform 0.3s ease;
+      animation: bounceIn 0.6s ease-out;
+    }
+
+    .blog-post .add-comment:hover {
+      background: var(--secondary-color);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(254,104,22,0.4);
+    }
+
     .toggle-night {
       position: absolute;
       top: 10px;
@@ -358,9 +577,11 @@
       color: #ffffff;
       transition: transform 0.3s ease;
     }
+
     .toggle-night:hover {
       transform: rotate(15deg);
     }
+
     #modal {
       display: none;
       position: fixed;
@@ -375,10 +596,12 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
+
     #modal.active {
       display: flex;
       opacity: 1;
     }
+
     #modal-content {
       background: var(--background-color);
       border-radius: 20px;
@@ -391,12 +614,15 @@
       transform: scale(0.8);
       animation: modalPop 0.4s ease-out forwards;
     }
+
     @keyframes modalPop {
       to { transform: scale(1); }
     }
+
     #modal.active #modal-content {
       transform: scale(1);
     }
+
     #modal-content h2 {
       margin-top: 0;
       color: var(--primary-color);
@@ -406,11 +632,13 @@
       text-align: center;
       transition: color 0.3s ease;
     }
+
     #modal-content p {
       margin: 10px 0;
       font-size: 1rem;
       font-weight: 300;
     }
+
     #modal-content label {
       display: block;
       margin: 10px 0 5px;
@@ -418,9 +646,8 @@
       color: var(--primary-color);
       transition: color 0.3s ease;
     }
-    #modal-content input[type="text"],
-    #modal-content input[type="date"],
-    #modal-content input[type="time"] {
+
+    #modal-content input[type="text"], #modal-content input[type="date"], #modal-content input[type="time"], #modal-content textarea {
       width: 100%;
       padding: 10px;
       font-size: 1rem;
@@ -431,22 +658,31 @@
       font-weight: 400;
       transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
     }
-    #modal-content input::placeholder {
+
+    #modal-content textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    #modal-content input::placeholder, #modal-content textarea::placeholder {
       color: #999;
       font-style: italic;
       font-weight: 300;
       transition: color 0.3s ease;
     }
-    #modal-content input:focus {
+
+    #modal-content input:focus, #modal-content textarea:focus {
       outline: none;
       border-color: var(--primary-color);
       box-shadow: 0 0 10px rgba(254,104,22,0.3);
     }
+
     #modal-content .date-group {
       display: flex;
       align-items: center;
       gap: 5px;
     }
+
     #toggle-end-date {
       padding: 0;
       margin: 0 5px;
@@ -456,26 +692,31 @@
       cursor: pointer;
       transition: transform 0.3s ease, color 0.3s ease;
     }
+
     #toggle-end-date:hover {
       color: var(--secondary-color);
     }
+
     #end-date-container {
       transition: opacity 0.3s ease, transform 0.3s ease;
       opacity: 0;
       transform: translateY(-10px);
       display: none;
     }
+
     #end-date-container.visible {
       opacity: 1;
       transform: translateY(0);
       display: block;
     }
+
     #modal-content .actions {
       margin-top: 25px;
       display: flex;
       justify-content: flex-end;
       gap: 15px;
     }
+
     #modal-content button {
       cursor: pointer;
       padding: 12px 30px;
@@ -485,35 +726,43 @@
       transition: background-color 0.3s ease, transform 0.3s ease;
       font-size: 0.95rem;
     }
+
     #modal-content button:hover {
       transform: translateY(-2px);
     }
+
     #btn-cancel, #btn-close {
       background: transparent;
       color: var(--primary-color);
       border: 2px solid var(--primary-color);
       transition: color 0.3s ease, border-color 0.3s ease;
     }
+
     #btn-cancel:hover, #btn-close:hover {
       background: var(--primary-color);
       color: #ffffff;
     }
+
     #btn-save {
       background: var(--primary-color);
       color: #ffffff;
       transition: background 0.3s ease;
     }
+
     #btn-save:hover {
       background: var(--secondary-color);
     }
+
     #btn-delete {
       background: #ff6b6b;
       color: #ffffff;
       transition: background 0.3s ease;
     }
+
     #btn-delete:hover {
       background: #d9534f;
     }
+
     #error-msg {
       color: #ff6b6b;
       font-weight: 400;
@@ -523,108 +772,181 @@
       text-align: center;
       transition: color 0.3s ease;
     }
+
     .night-mode {
       background: var(--night-bg);
       color: var(--night-text);
     }
-    .night-mode .calendar {
+
+    .night-mode header {
+      background: linear-gradient(90deg, var(--night-event-bg), var(--night-event-text));
+    }
+
+    .night-mode .calendar, .night-mode .blog {
       background: linear-gradient(180deg, rgba(255,107,107,0.1) 0%, var(--night-bg) 100%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
-    .night-mode .month-year, .night-mode .days-of-week div, .night-mode .day-number {
-      color: var(--night-text);
+
+    .night-mode .month-year, .night-mode .days-of-week div, .night-mode .day-number, .night-mode .blog-header h2 {
+      color: var(--night-event-text);
     }
-    .night-mode .calendar-header button {
+
+    .night-mode .calendar-header button, .night-mode #add-post-btn {
       background: var(--night-event-bg);
       color: var(--night-text);
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .night-mode .calendar-header button:hover {
+
+    .night-mode .calendar-header button:hover, .night-mode #add-post-btn:hover {
       background: var(--night-event-text);
       box-shadow: 0 4px 15px rgba(255,107,107,0.4);
     }
-    .night-mode .event {
-      background-color: var(--night-event-bg);
-      color: var(--night-event-text);
-    }
-    .night-mode .event:hover {
-      background-color: var(--night-event-text);
-      color: var(--night-event-bg);
-    }
-    .night-mode .event-card {
+
+    .night-mode .event, .night-mode .event-card, .night-mode .blog-post {
       background: linear-gradient(135deg, var(--night-event-bg) 0%, var(--night-event-text) 100%);
       color: var(--night-text);
     }
-    .night-mode .event-sidebar h3::after {
+
+    .night-mode .event:hover {
+      background: var(--night-event-text);
+      color: var(--night-event-bg);
+    }
+
+    .night-mode .blog-post .comment {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .night-mode .blog-post .add-comment {
+      background: var(--night-event-bg);
+    }
+
+    .night-mode .blog-post .add-comment:hover {
       background: var(--night-event-text);
     }
+
+    .night-mode .event-sidebar h3::after, .night-mode .blog-header h2::after, .night-mode .month-year::after {
+      background: var(--night-event-text);
+    }
+
+    .night-mode .event-sidebar {
+      background: linear-gradient(180deg, var(--night-bg) 0%, rgba(255,107,107,0.05) 100%);
+    }
+
     .night-mode #modal {
       background: rgba(18,18,18,0.9);
     }
+
     .night-mode #modal-content {
       background: var(--night-bg);
       color: var(--night-text);
+      box-shadow: 0 10px 40px rgba(255,107,107,0.4);
     }
+
     .night-mode #modal-content h2, .night-mode #modal-content label {
       color: var(--night-event-text);
     }
+
+    .night-mode #modal-content input, .night-mode #modal-content textarea {
+      background: #2a2a2a;
+      color: var(--night-text);
+      border-color: #444;
+    }
+
+    .night-mode #modal-content input::placeholder, .night-mode #modal-content textarea::placeholder {
+      color: #888;
+    }
+
+    .night-mode #btn-cancel, .night-mode #btn-close {
+      border-color: var(--night-event-text);
+      color: var(--night-event-text);
+    }
+
+    .night-mode #btn-cancel:hover, .night-mode #btn-close:hover {
+      background: var(--night-event-text);
+      color: var(--night-bg);
+    }
+
+    .night-mode #btn-save {
+      background: var(--night-event-bg);
+    }
+
+    .night-mode #btn-save:hover {
+      background: var(--night-event-text);
+    }
+
     .night-mode #error-msg {
       color: #ff9999;
     }
+
     .night-mode ::-webkit-scrollbar-thumb {
       background: var(--night-event-text);
     }
+
     @media (max-width: 720px) {
       .main-content {
         flex-direction: column;
         align-items: center;
       }
-      .calendar, .event-sidebar {
+
+      .calendar, .event-sidebar, .blog {
         width: 100%;
         margin: 0;
       }
-      .calendar-header {
+
+      .calendar-header, .blog-header {
         flex-direction: column;
         gap: 10px;
       }
+
       .days-of-week div, .day {
         font-size: 0.7rem;
         padding: 6px;
         min-height: 70px;
         margin: 2px;
       }
+
       .day-number {
         font-size: 0.9rem;
       }
+
       .event-sidebar {
         margin-top: 15px;
         padding: 15px;
       }
+
       #modal-content {
         width: 90%;
         padding: 20px;
       }
-      .calendar-header button {
+
+      .calendar-header button, #add-post-btn {
         width: 40px;
         height: 40px;
         font-size: 1.2rem;
       }
-      #add-event-btn {
-        padding: 10px;
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
+
+      .nav-tabs {
+        gap: 10px;
+      }
+
+      .nav-tab {
+        font-size: 1rem;
+        padding: 8px 15px;
       }
     }
   </style>
 </head>
 <body>
   <header>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="blog-tab">Blog</button>
+      <button class="nav-tab" id="calendar-tab">Calendário</button>
+    </div>
     <button class="toggle-night" id="toggle-night">
       <i class="fas fa-sun" id="icon-day"></i>
       <i class="fas fa-moon" id="icon-night" style="display: none;"></i>
     </button>
   </header>
-
   <div class="main-content">
     <div class="calendar" tabindex="0" aria-label="Calendário interativo">
       <div class="calendar-header">
@@ -644,25 +966,201 @@
       </div>
       <div class="days" role="grid" aria-label="Dias do mês"></div>
     </div>
-
-    <div class="event-sidebar">
+    <div class="blog active">
+      <div class="blog-header">
+        <h2>Blog</h2>
+        <button id="add-post-btn" aria-label="Adicionar Post"><i class="fas fa-plus"></i></button>
+      </div>
+      <div class="blog-posts" id="blog-posts"></div>
+    </div>
+    <div class="event-sidebar" id="event-sidebar" style="display: none;">
       <h3>Eventos do Dia</h3>
       <div id="event-list"></div>
     </div>
   </div>
-
   <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
     <div id="modal-content">
-      <h2 id="modal-title">Criar Evento</h2>
-      <div id="modal-body">
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+  <script>
+    const monthYearLabel = document.querySelector('.month-year');
+    const daysContainer = document.querySelector('.days');
+    const prevBtn = document.getElementById('prev-month');
+    const nextBtn = document.getElementById('next-month');
+    const addEventBtn = document.getElementById('add-event-btn');
+    const addPostBtn = document.getElementById('add-post-btn');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const eventList = document.getElementById('event-list');
+    const eventSidebar = document.getElementById('event-sidebar');
+    const blogPosts = document.getElementById('blog-posts');
+    const toggleNight = document.getElementById('toggle-night');
+    const iconDay = document.getElementById('icon-day');
+    const iconNight = document.getElementById('icon-night');
+    const calendarTab = document.getElementById('calendar-tab');
+    const blogTab = document.getElementById('blog-tab');
+    const calendar = document.querySelector('.calendar');
+    const blog = document.querySelector('.blog');
+
+    let current = new Date();
+    let events = JSON.parse(localStorage.getItem('chroma-events')) || {};
+    let posts = JSON.parse(localStorage.getItem('chroma-posts')) || [];
+    let selectedDateKey = null;
+    let selectedEventIndex = null;
+    let selectedPostIndex = null;
+    let isNightMode = false;
+
+    function pad(n) {
+      return n < 10 ? '0' + n : n;
+    }
+
+    function getDateKey(year, month, day) {
+      return year + '-' + pad(month) + '-' + pad(day);
+    }
+
+    function renderCalendar() {
+      daysContainer.innerHTML = '';
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+      monthYearLabel.textContent = current.toLocaleString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+
+      for (let i = 0; i < startDay; i++) {
+        const blank = document.createElement('div');
+        blank.className = 'day';
+        daysContainer.appendChild(blank);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = getDateKey(year, month + 1, day);
+        const dayEl = document.createElement('div');
+        dayEl.className = 'day';
+        dayEl.tabIndex = 0;
+        const dayNumberDiv = document.createElement('div');
+        dayNumberDiv.className = 'day-number';
+        dayNumberDiv.textContent = day;
+        dayEl.appendChild(dayNumberDiv);
+        const eventsDiv = document.createElement('div');
+        eventsDiv.className = 'events';
+        dayEl.appendChild(eventsDiv);
+
+        if (events[dateKey]) {
+          events[dateKey].sort((a, b) => a.startTime.localeCompare(b.startTime));
+          events[dateKey].forEach((event, index) => {
+            const evt = document.createElement('div');
+            evt.className = 'event';
+            let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
+            evt.setAttribute('data-full', tooltipText);
+            let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
+            evt.textContent = displayText;
+            evt.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openEventModal(dateKey, index);
+            });
+            eventsDiv.appendChild(evt);
+          });
+          dayEl.addEventListener('mouseover', () => {
+            renderEventSidebar(dateKey);
+          });
+        }
+
+        dayEl.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('event')) {
+            document.querySelectorAll('.day').forEach(day => day.classList.remove('selected'));
+            dayEl.classList.add('selected');
+            selectedDateKey = dateKey;
+            renderEventSidebar(dateKey);
+          }
+        });
+
+        dayEl.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            dayEl.click();
+          }
+        });
+
+        daysContainer.appendChild(dayEl);
+      }
+    }
+
+    function renderEventSidebar(dateKey) {
+      eventList.innerHTML = '';
+      if (events[dateKey]) {
+        events[dateKey].forEach((event, index) => {
+          const card = document.createElement('div');
+          card.className = 'event-card';
+          card.innerHTML = `${event.startTime} - ${event.endTime}: ${event.name}`;
+          card.addEventListener('click', () => openEventModal(dateKey, index));
+          eventList.appendChild(card);
+        });
+      } else {
+        eventList.innerHTML = '<p>Nenhum evento para este dia.</p>';
+      }
+    }
+
+    function renderBlogPosts() {
+      blogPosts.innerHTML = '';
+      if (posts.length === 0) {
+        blogPosts.innerHTML = '<p>Nenhum post disponível.</p>';
+        return;
+      }
+      posts.forEach((post, index) => {
+        const postEl = document.createElement('div');
+        postEl.className = 'blog-post';
+        postEl.innerHTML = `
+          <h4>${post.title}</h4>
+          <p>${post.content}</p>
+          <div class="post-meta">Postagem em ${post.date}</div>
+          <div class="comments">
+            ${post.comments.map((comment, cIndex) => `
+              <div class="comment">
+                ${comment.text}
+                <button class="delete-comment-btn" data-post-index="${index}" data-comment-index="${cIndex}">Excluir</button>
+              </div>
+            `).join('')}
+          </div>
+          <button class="add-comment" data-post-index="${index}">Adicionar Comentário</button>
+        `;
+        postEl.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('add-comment') && !e.target.classList.contains('delete-comment-btn')) {
+            openPostModal(index);
+          }
+        });
+        blogPosts.appendChild(postEl);
+      });
+
+      document.querySelectorAll('.add-comment').forEach(button => {
+        button.addEventListener('click', () => {
+          const postIndex = parseInt(button.dataset.postIndex);
+          openCommentModal(postIndex);
+        });
+      });
+
+      document.querySelectorAll('.delete-comment-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          const postIndex = parseInt(button.dataset.postIndex);
+          const commentIndex = parseInt(button.dataset.commentIndex);
+          deleteComment(postIndex, commentIndex);
+        });
+      });
+    }
+
+    function openCreateEventModal(dateKey) {
+      modalTitle.textContent = 'Criar Evento';
+      modalBody.innerHTML = `
         <form id="event-form" novalidate>
           <label for="event-name">Nome do Evento</label>
           <input type="text" id="event-name" name="event-name" required autocomplete="off" placeholder="Insira o nome do evento" maxlength="60" />
-
           <div class="date-group">
             <div>
               <label for="event-date">Data Início</label>
-              <input type="date" id="event-date" name="event-date" required />
+              <input type="date" id="event-date" name="event-date" required value="${dateKey}" />
             </div>
             <button type="button" id="toggle-end-date"><i class="fas fa-chevron-right"></i></button>
             <div id="end-date-container">
@@ -670,314 +1168,285 @@
               <input type="date" id="end-date" name="end-date" />
             </div>
           </div>
-
           <label for="start-time">Hora Início</label>
           <input type="time" id="start-time" name="start-time" required />
-
           <label for="end-time">Hora Término</label>
           <input type="time" id="end-time" name="end-time" required />
-
           <div id="error-msg" aria-live="assertive"></div>
-
           <div class="actions">
             <button type="button" id="btn-cancel">Cancelar</button>
             <button type="submit" id="btn-save">Salvar</button>
           </div>
         </form>
-      </div>
-    </div>
-  </div>
+      `;
+      modal.classList.add('active');
+      const form = document.getElementById('event-form');
+      const btnCancel = document.getElementById('btn-cancel');
+      const toggleEndDateBtn = document.getElementById('toggle-end-date');
+      const endDateContainer = document.getElementById('end-date-container');
+      let isEndDateVisible = false;
 
-<script>
-  const monthYearLabel = document.querySelector('.month-year');
-  const daysContainer = document.querySelector('.days');
-  const prevBtn = document.getElementById('prev-month');
-  const nextBtn = document.getElementById('next-month');
-  const addEventBtn = document.getElementById('add-event-btn');
-  const modal = document.getElementById('modal');
-  const modalTitle = document.getElementById('modal-title');
-  const modalBody = document.getElementById('modal-body');
-  const form = document.getElementById('event-form');
-  const btnCancel = document.getElementById('btn-cancel');
-  const errorMsg = document.getElementById('error-msg');
-  const eventList = document.getElementById('event-list');
-  const toggleNight = document.getElementById('toggle-night');
-  const iconDay = document.getElementById('icon-day');
-  const iconNight = document.getElementById('icon-night');
-  const toggleEndDateBtn = document.getElementById('toggle-end-date');
-  const endDateContainer = document.getElementById('end-date-container');
+      btnCancel.addEventListener('click', closeModal);
+      form.addEventListener('submit', handleEventSubmit);
+      toggleEndDateBtn.addEventListener('click', () => {
+        isEndDateVisible = !isEndDateVisible;
+        toggleEndDateBtn.style.transform = 'scale(0)';
+        setTimeout(() => {
+          toggleEndDateBtn.innerHTML = isEndDateVisible ? '<i class="fas fa-chevron-left"></i>' : '<i class="fas fa-chevron-right"></i>';
+          toggleEndDateBtn.style.transform = 'scale(1)';
+        }, 150);
+        if (isEndDateVisible) {
+          endDateContainer.classList.add('visible');
+          endDateContainer.style.display = 'block';
+        } else {
+          endDateContainer.classList.remove('visible');
+          setTimeout(() => {
+            endDateContainer.style.display = 'none';
+          }, 300);
+        }
+      });
 
-  let current = new Date();
-  let events = JSON.parse(localStorage.getItem('chroma-events')) || {};
-  let selectedDateKey = null;
-  let selectedEventIndex = null;
-  let isNightMode = false;
-  let isEndDateVisible = false;
-
-  function pad(n) {
-    return n < 10 ? '0' + n : n;
-  }
-
-  function getDateKey(year, month, day) {
-    return year + '-' + pad(month) + '-' + pad(day);
-  }
-
-  function renderCalendar() {
-    daysContainer.innerHTML = '';
-    const year = current.getFullYear();
-    const month = current.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay();
-    const daysInMonth = lastDay.getDate();
-
-    monthYearLabel.textContent = current.toLocaleString('pt-BR', {
-      month: 'long',
-      year: 'numeric'
-    }).replace(/^\w/, c => c.toUpperCase());
-
-    for (let i = 0; i < startDay; i++) {
-      const blank = document.createElement('div');
-      blank.className = 'day';
-      daysContainer.appendChild(blank);
+      document.getElementById('event-name').focus();
     }
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateKey = getDateKey(year, month + 1, day);
-      const dayEl = document.createElement('div');
-      dayEl.className = 'day';
-      dayEl.tabIndex = 0;
+    function openCreatePostModal() {
+      modalTitle.textContent = 'Criar Post';
+      modalBody.innerHTML = `
+        <form id="post-form" novalidate>
+          <label for="post-title">Título do Post</label>
+          <input type="text" id="post-title" name="post-title" required autocomplete="off" placeholder="Insira o título do post" maxlength="100" />
+          <label for="post-content">Conteúdo</label>
+          <textarea id="post-content" name="post-content" required placeholder="Escreva o conteúdo do post" maxlength="1000"></textarea>
+          <div id="error-msg" aria-live="assertive"></div>
+          <div class="actions">
+            <button type="button" id="btn-cancel">Cancelar</button>
+            <button type="submit" id="btn-save">Salvar</button>
+          </div>
+        </form>
+      `;
+      modal.classList.add('active');
+      const form = document.getElementById('post-form');
+      const btnCancel = document.getElementById('btn-cancel');
+      btnCancel.addEventListener('click', closeModal);
+      form.addEventListener('submit', handlePostSubmit);
+      document.getElementById('post-title').focus();
+    }
 
-      const dayNumberDiv = document.createElement('div');
-      dayNumberDiv.className = 'day-number';
-      dayNumberDiv.textContent = day;
-      dayEl.appendChild(dayNumberDiv);
+    function openCommentModal(postIndex) {
+      selectedPostIndex = postIndex;
+      modalTitle.textContent = 'Adicionar Comentário';
+      modalBody.innerHTML = `
+        <form id="comment-form" novalidate>
+          <label for="comment-text">Comentário</label>
+          <textarea id="comment-text" name="comment-text" required placeholder="Escreva seu comentário" maxlength="500"></textarea>
+          <div id="error-msg" aria-live="assertive"></div>
+          <div class="actions">
+            <button type="button" id="btn-cancel">Cancelar</button>
+            <button type="submit" id="btn-save">Salvar</button>
+          </div>
+        </form>
+      `;
+      modal.classList.add('active');
+      const form = document.getElementById('comment-form');
+      const btnCancel = document.getElementById('btn-cancel');
+      btnCancel.addEventListener('click', closeModal);
+      form.addEventListener('submit', handleCommentSubmit);
+      document.getElementById('comment-text').focus();
+    }
 
-      const eventsDiv = document.createElement('div');
-      eventsDiv.className = 'events';
-      dayEl.appendChild(eventsDiv);
+    function openPostModal(index) {
+      const post = posts[index];
+      selectedPostIndex = index;
+      modalTitle.textContent = 'Detalhes do Post';
+      modalBody.innerHTML = `
+        <h4>${post.title}</h4>
+        <p>${post.content}</p>
+        <div class="post-meta">Postagem em ${post.date}</div>
+        <div class="actions">
+          <button type="button" id="btn-delete">Apagar</button>
+          <button type="button" id="btn-close">Fechar</button>
+        </div>
+      `;
+      modal.classList.add('active');
+      const btnDelete = document.getElementById('btn-delete');
+      const btnClose = document.getElementById('btn-close');
+      btnDelete.addEventListener('click', () => handlePostDelete(index));
+      btnClose.addEventListener('click', closeModal);
+    }
 
-      if (events[dateKey]) {
-        events[dateKey].sort((a, b) => a.startTime.localeCompare(b.startTime));
-        events[dateKey].forEach((event, index) => {
-          const evt = document.createElement('div');
-          evt.className = 'event';
-          let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
-          evt.setAttribute('data-full', tooltipText);
-          let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
-          evt.textContent = displayText;
-          evt.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openEventModal(dateKey, index);
-          });
-          eventsDiv.appendChild(evt);
-        });
+    function openEventModal(dateKey, eventIndex) {
+      const event = events[dateKey][eventIndex];
+      selectedDateKey = dateKey;
+      selectedEventIndex = eventIndex;
+      modalTitle.textContent = 'Detalhes do Evento';
+      modalBody.innerHTML = `
+        <p><strong>Nome:</strong> ${event.name}</p>
+        <p><strong>Horário:</strong> ${event.startTime} - ${event.endTime}</p>
+        <div class="actions">
+          <button type="button" id="btn-delete">Apagar</button>
+          <button type="button" id="btn-close">Fechar</button>
+        </div>
+      `;
+      modal.classList.add('active');
+      const btnDelete = document.getElementById('btn-delete');
+      const btnClose = document.getElementById('btn-close');
+      btnDelete.addEventListener('click', handleEventDelete);
+      btnClose.addEventListener('click', closeModal);
+    }
 
-        dayEl.addEventListener('mouseover', () => {
-          renderEventSidebar(dateKey);
-        });
+    function handleEventSubmit(e) {
+      e.preventDefault();
+      const errorMsg = document.getElementById('error-msg');
+      errorMsg.textContent = '';
+      const name = document.getElementById('event-name').value.trim();
+      const date = document.getElementById('event-date').value;
+      const startTime = document.getElementById('start-time').value;
+      const endTime = document.getElementById('end-time').value;
+
+      if (!name || !date || !startTime || !endTime) {
+        errorMsg.textContent = 'Por favor, preencha todos os campos obrigatórios.';
+        return;
       }
 
-      dayEl.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('event')) {
-          document.querySelectorAll('.day').forEach(day => day.classList.remove('selected'));
-          dayEl.classList.add('selected');
-          selectedDateKey = dateKey;
-          renderEventSidebar(dateKey);
-        }
-      });
+      if (startTime > endTime) {
+        errorMsg.textContent = 'A hora de início deve ser anterior ou igual à hora de término.';
+        return;
+      }
 
-      dayEl.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          dayEl.click();
-        }
-      });
-
-      daysContainer.appendChild(dayEl);
+      if (!events[date]) events[date] = [];
+      events[date].push({ name, startTime, endTime });
+      localStorage.setItem('chroma-events', JSON.stringify(events));
+      closeModal();
+      renderCalendar();
+      renderEventSidebar(date);
     }
-  }
 
-  function renderEventSidebar(dateKey) {
-    eventList.innerHTML = '';
-    if (events[dateKey]) {
-      events[dateKey].forEach((event, index) => {
-        const card = document.createElement('div');
-        card.className = 'event-card';
-        card.innerHTML = `${event.startTime} - ${event.endTime}: ${event.name}`;
-        card.addEventListener('click', () => openEventModal(dateKey, index));
-        eventList.appendChild(card);
-      });
-    } else {
-      eventList.innerHTML = '<p>Nenhum evento para este dia.</p>';
+    function handlePostSubmit(e) {
+      e.preventDefault();
+      const errorMsg = document.getElementById('error-msg');
+      errorMsg.textContent = '';
+      const title = document.getElementById('post-title').value.trim();
+      const content = document.getElementById('post-content').value.trim();
+
+      if (!title || !content) {
+        errorMsg.textContent = 'Por favor, preencha todos os campos obrigatórios.';
+        return;
+      }
+
+      const date = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      posts.push({ title, content, date, comments: [] });
+      localStorage.setItem('chroma-posts', JSON.stringify(posts));
+      closeModal();
+      renderBlogPosts();
     }
-  }
 
-  function openCreateEventModal(dateKey) {
-    modalTitle.textContent = 'Criar Evento';
-    modalBody.innerHTML = `
-      <form id="event-form" novalidate>
-        <label for="event-name">Nome do Evento</label>
-        <input type="text" id="event-name" name="event-name" required autocomplete="off" placeholder="Insira o nome do evento" maxlength="60" />
+    function handleCommentSubmit(e) {
+      e.preventDefault();
+      const errorMsg = document.getElementById('error-msg');
+      errorMsg.textContent = '';
+      const text = document.getElementById('comment-text').value.trim();
 
-        <div class="date-group">
-          <div>
-            <label for="event-date">Data Início</label>
-            <input type="date" id="event-date" name="event-date" required value="${dateKey}" />
-          </div>
-          <button type="button" id="toggle-end-date"><i class="fas fa-chevron-right"></i></button>
-          <div id="end-date-container">
-            <label for="end-date">Data Término</label>
-            <input type="date" id="end-date" name="end-date" />
-          </div>
-        </div>
+      if (!text) {
+        errorMsg.textContent = 'Por favor, escreva um comentário.';
+        return;
+      }
 
-        <label for="start-time">Hora Início</label>
-        <input type="time" id="start-time" name="start-time" required />
+      posts[selectedPostIndex].comments.push({ text });
+      localStorage.setItem('chroma-posts', JSON.stringify(posts));
+      closeModal();
+      renderBlogPosts();
+    }
 
-        <label for="end-time">Hora Término</label>
-        <input type="time" id="end-time" name="end-time" required />
+    function handleEventDelete() {
+      events[selectedDateKey].splice(selectedEventIndex, 1);
+      if (events[selectedDateKey].length === 0) {
+        delete events[selectedDateKey];
+      }
+      localStorage.setItem('chroma-events', JSON.stringify(events));
+      closeModal();
+      renderCalendar();
+      renderEventSidebar(selectedDateKey);
+    }
 
-        <div id="error-msg" aria-live="assertive"></div>
+    function handlePostDelete(index) {
+      posts.splice(index, 1);
+      localStorage.setItem('chroma-posts', JSON.stringify(posts));
+      closeModal();
+      renderBlogPosts();
+    }
 
-        <div class="actions">
-          <button type="button" id="btn-cancel">Cancelar</button>
-          <button type="submit" id="btn-save">Salvar</button>
-        </div>
-      </form>
-    `;
-    modal.classList.add('active');
-    const newForm = document.getElementById('event-form');
-    const newBtnCancel = document.getElementById('btn-cancel');
-    const newToggleEndDateBtn = document.getElementById('toggle-end-date');
-    const newEndDateContainer = document.getElementById('end-date-container');
-    let isEndDateVisible = false;
+    function deleteComment(postIndex, commentIndex) {
+      posts[postIndex].comments.splice(commentIndex, 1);
+      localStorage.setItem('chroma-posts', JSON.stringify(posts));
+      renderBlogPosts();
+    }
 
-    newBtnCancel.addEventListener('click', closeModal);
-    newForm.addEventListener('submit', handleEventSubmit);
+    function closeModal() {
+      modal.classList.remove('active');
+      modalBody.innerHTML = '';
+    }
 
-    newToggleEndDateBtn.addEventListener('click', () => {
-      isEndDateVisible = !isEndDateVisible;
-      newToggleEndDateBtn.style.transform = 'scale(0)';
-      setTimeout(() => {
-        newToggleEndDateBtn.innerHTML = isEndDateVisible ? '<i class="fas fa-chevron-left"></i>' : '<i class="fas fa-chevron-right"></i>';
-        newToggleEndDateBtn.style.transform = 'scale(1)';
-      }, 150);
-      if (isEndDateVisible) {
-        newEndDateContainer.classList.add('visible');
-        newEndDateContainer.style.display = 'block';
+    function toggleNightMode() {
+      isNightMode = !isNightMode;
+      document.body.classList.toggle('night-mode', isNightMode);
+      iconDay.style.display = isNightMode ? 'none' : 'block';
+      iconNight.style.display = isNightMode ? 'block' : 'none';
+      if (calendar.classList.contains('active')) {
+        renderCalendar();
       } else {
-        newEndDateContainer.classList.remove('visible');
-        setTimeout(() => {
-          newEndDateContainer.style.display = 'none';
-        }, 300);
+        renderBlogPosts();
+      }
+    }
+
+    function switchTab(tab) {
+      calendarTab.classList.remove('active');
+      blogTab.classList.remove('active');
+      calendar.classList.remove('active');
+      blog.classList.remove('active');
+      eventSidebar.style.display = 'none';
+
+      if (tab === 'calendar') {
+        calendarTab.classList.add('active');
+        calendar.classList.add('active');
+        eventSidebar.style.display = 'block';
+        renderCalendar();
+      } else {
+        blogTab.classList.add('active');
+        blog.classList.add('active');
+        renderBlogPosts();
+      }
+    }
+
+    modal.addEventListener('click', e => {
+      if (e.target === modal) closeModal();
+    });
+
+    addEventBtn.addEventListener('click', () => {
+      if (selectedDateKey) {
+        openCreateEventModal(selectedDateKey);
+      } else {
+        alert('Por favor, selecione um dia no calendário.');
       }
     });
 
-    document.getElementById('event-name').focus();
-  }
+    addPostBtn.addEventListener('click', openCreatePostModal);
 
-  function openEventModal(dateKey, eventIndex) {
-    const event = events[dateKey][eventIndex];
-    selectedDateKey = dateKey;
-    selectedEventIndex = eventIndex;
-    modalTitle.textContent = 'Detalhes do Evento';
-    modalBody.innerHTML = `
-      <p><strong>Nome:</strong> ${event.name}</p>
-      <p><strong>Horário:</strong> ${event.startTime} - ${event.endTime}</p>
-      <div class="actions">
-        <button type="button" id="btn-delete">Apagar</button>
-        <button type="button" id="btn-close">Fechar</button>
-      </div>
-    `;
-    modal.classList.add('active');
-    const btnDelete = document.getElementById('btn-delete');
-    const btnClose = document.getElementById('btn-close');
-    btnDelete.addEventListener('click', handleEventDelete);
-    btnClose.addEventListener('click', closeModal);
-  }
+    prevBtn.addEventListener('click', () => {
+      current.setMonth(current.getMonth() - 1);
+      renderCalendar();
+    });
 
-  function handleEventSubmit(e) {
-    e.preventDefault();
-    const errorMsg = document.getElementById('error-msg');
-    errorMsg.textContent = '';
+    nextBtn.addEventListener('click', () => {
+      current.setMonth(current.getMonth() + 1);
+      renderCalendar();
+    });
 
-    const name = document.getElementById('event-name').value.trim();
-    const date = document.getElementById('event-date').value;
-    const startTime = document.getElementById('start-time').value;
-    const endTime = document.getElementById('end-time').value;
+    toggleNight.addEventListener('click', toggleNightMode);
 
-    if (!name || !date || !startTime || !endTime) {
-      errorMsg.textContent = 'Por favor, preencha todos os campos obrigatórios.';
-      return;
-    }
-    if (startTime > endTime) {
-      errorMsg.textContent = 'A hora de início deve ser anterior ou igual à hora de término.';
-      return;
-    }
+    calendarTab.addEventListener('click', () => switchTab('calendar'));
+    blogTab.addEventListener('click', () => switchTab('blog'));
 
-    if (!events[date]) events[date] = [];
-    events[date].push({ name, startTime, endTime });
-    localStorage.setItem('chroma-events', JSON.stringify(events));
-
-    closeModal();
-    renderCalendar();
-    renderEventSidebar(date);
-  }
-
-  function handleEventDelete() {
-    events[selectedDateKey].splice(selectedEventIndex, 1);
-    if (events[selectedDateKey].length === 0) {
-      delete events[selectedDateKey];
-    }
-    localStorage.setItem('chroma-events', JSON.stringify(events));
-    closeModal();
-    renderCalendar();
-    renderEventSidebar(selectedDateKey);
-  }
-
-  function closeModal() {
-    modal.classList.remove('active');
-    modalBody.innerHTML = '';
-  }
-
-  modal.addEventListener('click', e => {
-    if (e.target === modal) closeModal();
-  });
-
-  addEventBtn.addEventListener('click', () => {
-    if (selectedDateKey) {
-      openCreateEventModal(selectedDateKey);
-    } else {
-      alert('Por favor, selecione um dia no calendário.');
-    }
-  });
-
-  prevBtn.addEventListener('click', () => {
-    current.setMonth(current.getMonth() - 1);
-    renderCalendar();
-  });
-  nextBtn.addEventListener('click', () => {
-    current.setMonth(current.getMonth() + 1);
-    renderCalendar();
-  });
-
-  toggleNight.addEventListener('click', toggleNightMode);
-
-  function toggleNightMode() {
-    isNightMode = !isNightMode;
-    document.body.classList.toggle('night-mode', isNightMode);
-    if (isNightMode) {
-      iconDay.style.display = 'none';
-      iconNight.style.display = 'block';
-    } else {
-      iconDay.style.display = 'block';
-      iconNight.style.display = 'none';
-    }
-    renderCalendar();
-  }
-
-  renderCalendar();
-  nextBtn.focus();
-</script>
+    switchTab('blog');
+  </script>
 </body>
 </html>
