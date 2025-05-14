@@ -81,6 +81,7 @@
     position: relative;
     cursor: pointer;
     transition: all 0.3s;
+    overflow: hidden;
   }
   .day:hover {
     background: #ffe5c2;
@@ -106,6 +107,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
   }
   .event:hover::after {
     content: attr(data-full);
@@ -120,6 +122,7 @@
     white-space: nowrap;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 10;
+    transform: translateY(-6px);
   }
   @media (max-width: 700px) {
     .calendar-header {
@@ -129,6 +132,88 @@
     .days-of-week div, .day {
       font-size: 0.75rem;
     }
+    .day {
+      min-height: 80px;
+      margin: 2px;
+      padding: 6px;
+    }
+  }
+
+  /* Modal */
+  #modal {
+    display: none; 
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+  }
+  #modal.active {
+    display: flex;
+  }
+  #modal-content {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    width: 320px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    font-family: var(--font-family);
+  }
+  #modal-content h2 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+  #modal-content label {
+    display: block;
+    margin: 10px 0 4px;
+    font-weight: 600;
+    color: var(--primary-color-dark);
+  }
+  #modal-content input[type="text"],
+  #modal-content input[type="date"],
+  #modal-content input[type="time"] {
+    width: 100%;
+    padding: 8px 6px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: var(--font-family);
+  }
+  #modal-content .actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  #modal-content button {
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    transition: background-color 0.3s;
+    font-family: var(--font-family);
+  }
+  #btn-cancel {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+  }
+  #btn-cancel:hover {
+    background: var(--primary-color);
+    color: white;
+  }
+  #btn-save {
+    background: var(--primary-color);
+    color: white;
+  }
+  #btn-save:hover {
+    background: var(--primary-color-dark);
   }
 </style>
 </head>
@@ -136,94 +221,212 @@
   <h1>Calendário ChromaSolar</h1>
   <div class="calendar">
     <div class="calendar-header">
-      <button id="prev-month">&#9664;</button>
-      <div class="month-year"></div>
-      <button id="next-month">&#9654;</button>
+      <button id="prev-month" aria-label="Mês anterior">&#9664;</button>
+      <div class="month-year" aria-live="polite"></div>
+      <button id="next-month" aria-label="Próximo mês">&#9654;</button>
     </div>
-    <div class="days-of-week">
-      <div>Dom</div>
-      <div>Seg</div>
-      <div>Ter</div>
-      <div>Qua</div>
-      <div>Qui</div>
-      <div>Sex</div>
-      <div>Sáb</div>
+    <div class="days-of-week" role="row">
+      <div role="columnheader">Dom</div>
+      <div role="columnheader">Seg</div>
+      <div role="columnheader">Ter</div>
+      <div role="columnheader">Qua</div>
+      <div role="columnheader">Qui</div>
+      <div role="columnheader">Sex</div>
+      <div role="columnheader">Sáb</div>
     </div>
-    <div class="days">
+    <div class="days" role="grid" aria-label="Dias do mês">
       <!-- Dias serão inseridos via JS -->
     </div>
   </div>
+
+  <!-- Modal para criar evento -->
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal-content">
+      <h2 id="modal-title">Criar Evento</h2>
+      <form id="event-form">
+        <label for="event-name">Nome da Pessoa / Evento</label>
+        <input type="text" id="event-name" name="event-name" required autocomplete="off" />
+
+        <label for="start-date">Data Início</label>
+        <input type="date" id="start-date" name="start-date" required />
+
+        <label for="start-time">Hora Início</label>
+        <input type="time" id="start-time" name="start-time" required />
+
+        <label for="end-date">Data Término</label>
+        <input type="date" id="end-date" name="end-date" required />
+
+        <label for="end-time">Hora Término</label>
+        <input type="time" id="end-time" name="end-time" required />
+
+        <div class="actions">
+          <button type="button" id="btn-cancel">Cancelar</button>
+          <button type="submit" id="btn-save">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 <script>
-const monthYearLabel = document.querySelector('.month-year');
-const daysContainer = document.querySelector('.days');
-const prevBtn = document.getElementById('prev-month');
-const nextBtn = document.getElementById('next-month');
+  const monthYearLabel = document.querySelector('.month-year');
+  const daysContainer = document.querySelector('.days');
+  const prevBtn = document.getElementById('prev-month');
+  const nextBtn = document.getElementById('next-month');
 
-let current = new Date();
-let events = JSON.parse(localStorage.getItem('chroma-events')) || {};
+  const modal = document.getElementById('modal');
+  const form = document.getElementById('event-form');
+  const btnCancel = document.getElementById('btn-cancel');
 
-function renderCalendar() {
-  daysContainer.innerHTML = '';
-  const year = current.getFullYear();
-  const month = current.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+  let current = new Date();
+  let events = JSON.parse(localStorage.getItem('chroma-events')) || {};
+  let selectedDateKey = null; // data do dia clicado para criar evento
 
-  monthYearLabel.textContent = current.toLocaleString('pt-BR', {
-    month: 'long', year: 'numeric'
-  });
-
-  const startDay = firstDay.getDay();
-  const daysInMonth = lastDay.getDate();
-
-  for (let i = 0; i < startDay; i++) {
-    const blank = document.createElement('div');
-    blank.className = 'day';
-    daysContainer.appendChild(blank);
+  function pad(n) {
+    return n < 10 ? '0' + n : n;
+  }
+  function getDateKey(year, month, day) {
+    return year + '-' + pad(month) + '-' + pad(day);
   }
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateKey = `${year}-${month + 1}-${day}`;
-    const dayEl = document.createElement('div');
-    dayEl.className = 'day';
-    dayEl.innerHTML = `<div class="day-number">${day}</div><div class="events"></div>`;
+  function renderCalendar() {
+    daysContainer.innerHTML = '';
+    const year = current.getFullYear();
+    const month = current.getMonth();
 
-    if (events[dateKey]) {
-      const eventsDiv = dayEl.querySelector('.events');
-      events[dateKey].forEach(event => {
-        const evt = document.createElement('div');
-        evt.className = 'event';
-        evt.setAttribute('data-full', event);
-        evt.textContent = event.length > 16 ? event.substring(0, 16) + '…' : event;
-        eventsDiv.appendChild(evt);
-      });
-    }
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
 
-    dayEl.addEventListener('click', () => {
-      const title = prompt('Digite um evento para ' + dateKey);
-      if (title) {
-        if (!events[dateKey]) events[dateKey] = [];
-        events[dateKey].push(title);
-        localStorage.setItem('chroma-events', JSON.stringify(events));
-        renderCalendar();
-      }
+    monthYearLabel.textContent = current.toLocaleString('pt-BR', {
+      month: 'long',
+      year: 'numeric'
     });
 
-    daysContainer.appendChild(dayEl);
+    // Espaços em branco antes do 1º dia
+    for (let i = 0; i < startDay; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'day';
+      daysContainer.appendChild(blank);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = getDateKey(year, month + 1, day);
+      const dayEl = document.createElement('div');
+      dayEl.className = 'day';
+      dayEl.tabIndex = 0;
+
+      const dayNumberDiv = document.createElement('div');
+      dayNumberDiv.className = 'day-number';
+      dayNumberDiv.textContent = day;
+      dayEl.appendChild(dayNumberDiv);
+
+      const eventsDiv = document.createElement('div');
+      eventsDiv.className = 'events';
+      dayEl.appendChild(eventsDiv);
+
+      if (events[dateKey]) {
+        events[dateKey].forEach(event => {
+          const evt = document.createElement('div');
+          evt.className = 'event';
+          // Apresenta nome e horários no tooltip
+          evt.setAttribute('data-full', event.name + " | " + event.startDate + " " + event.startTime + " - " + event.endDate + " " + event.endTime);
+          const text = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
+          evt.textContent = text;
+          eventsDiv.appendChild(evt);
+        });
+      }
+
+      dayEl.addEventListener('click', () => {
+        selectedDateKey = dateKey;
+        openModal(dateKey);
+      });
+
+      dayEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          dayEl.click();
+        }
+      });
+
+      daysContainer.appendChild(dayEl);
+    }
   }
-}
 
-prevBtn.onclick = () => {
-  current.setMonth(current.getMonth() - 1);
+  // Abre modal para criar evento com data inicial preenchida
+  function openModal(dateKey) {
+    form.reset();
+
+    // Preenche datas no formulário como padrão para iniciantes no dia clicado
+    const [year, month, day] = dateKey.split('-');
+    const dateStr = `${year}-${month}-${day}`;
+    form['start-date'].value = dateStr;
+    form['end-date'].value = dateStr;
+
+    modal.classList.add('active');
+    form['event-name'].focus();
+  }
+
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+
+  btnCancel.addEventListener('click', closeModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const name = form['event-name'].value.trim();
+    const startDate = form['start-date'].value;
+    const startTime = form['start-time'].value;
+    const endDate = form['end-date'].value;
+    const endTime = form['end-time'].value;
+
+    if (!name || !startDate || !startTime || !endDate || !endTime) {
+      alert('Preencha todos os campos.');
+      return;
+    }
+
+    // Validar que a data/hora início <= data/hora término
+    const startDateTime = new Date(startDate + 'T' + startTime);
+    const endDateTime = new Date(endDate + 'T' + endTime);
+
+    if (startDateTime > endDateTime) {
+      alert('A data e hora de início devem ser anteriores ou iguais à data e hora de término.');
+      return;
+    }
+
+    // Armazena evento na localStorage
+    // Para simplicidade, vamos armazenar em um objeto agrupado por dia do mês (startDate)
+    // Poderia ser ajustado para chave de cada dia com todos eventos incluindo intervalo
+
+    // Usaremos data do início para chave, para exibir evento no dia inicial
+    if (!events[startDate]) events[startDate] = [];
+    events[startDate].push({ name, startDate, startTime, endDate, endTime });
+
+    localStorage.setItem('chroma-events', JSON.stringify(events));
+
+    closeModal();
+    renderCalendar();
+  });
+
+  prevBtn.addEventListener('click', () => {
+    current.setMonth(current.getMonth() - 1);
+    renderCalendar();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    current.setMonth(current.getMonth() + 1);
+    renderCalendar();
+  });
+
+  // Inicializa calendário
   renderCalendar();
-};
-
-nextBtn.onclick = () => {
-  current.setMonth(current.getMonth() + 1);
-  renderCalendar();
-};
-
-renderCalendar();
 </script>
 </body>
 </html>
