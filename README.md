@@ -1,1 +1,0 @@
-# chromacalendar.github.io
