@@ -985,6 +985,7 @@
     </div>
   </div>
   <script>
+    const API_BASE_URL = 'http://localhost:3000'; // Replace with your server URL
     const monthYearLabel = document.querySelector('.month-year');
     const daysContainer = document.querySelector('.days');
     const prevBtn = document.getElementById('prev-month');
@@ -1006,12 +1007,57 @@
     const blog = document.querySelector('.blog');
 
     let current = new Date();
-    let events = JSON.parse(localStorage.getItem('chroma-events')) || {};
-    let posts = JSON.parse(localStorage.getItem('chroma-posts')) || [];
+    let events = {};
+    let posts = [];
     let selectedDateKey = null;
     let selectedEventIndex = null;
-    let selectedPostIndex = null;
+    let selectedPostId = null;
     let isNightMode = false;
+
+    async function fetchPosts() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/posts`, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        posts = await response.json();
+        localStorage.setItem('chroma-posts-cache', JSON.stringify(posts));
+        return posts;
+      } catch (error) {
+        console.error('Erro ao buscar posts:', error.message, error.stack);
+        const cachedPosts = JSON.parse(localStorage.getItem('chroma-posts-cache') || '[]');
+        if (cachedPosts.length > 0) {
+          alert('Servidor indisponível. Carregando posts salvos localmente.');
+          posts = cachedPosts;
+          return posts;
+        }
+        alert('Falha ao carregar posts: ' + error.message);
+        return [];
+      }
+    }
+
+    async function fetchEvents() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/events`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        events = data.events || {};
+        localStorage.setItem('chroma-events-cache', JSON.stringify(events));
+        return events;
+      } catch (error) {
+        console.error('Erro ao buscar eventos:', error.message, error.stack);
+        const cachedEvents = JSON.parse(localStorage.getItem('chroma-events-cache') || '{}');
+        if (Object.keys(cachedEvents).length > 0) {
+          alert('Servidor indisponível. Carregando eventos salvos localmente.');
+          events = cachedEvents;
+          return events;
+        }
+        alert('Falha ao carregar eventos: ' + error.message);
+        return {};
+      }
+    }
 
     function pad(n) {
       return n < 10 ? '0' + n : n;
@@ -1021,7 +1067,8 @@
       return year + '-' + pad(month) + '-' + pad(day);
     }
 
-    function renderCalendar() {
+    async function renderCalendar() {
+      await fetchEvents();
       daysContainer.innerHTML = '';
       const year = current.getFullYear();
       const month = current.getMonth();
@@ -1104,13 +1151,14 @@
       }
     }
 
-    function renderBlogPosts() {
+    async function renderBlogPosts() {
+      await fetchPosts();
       blogPosts.innerHTML = '';
       if (posts.length === 0) {
         blogPosts.innerHTML = '<p>Nenhum post disponível.</p>';
         return;
       }
-      posts.forEach((post, index) => {
+      posts.forEach((post) => {
         const postEl = document.createElement('div');
         postEl.className = 'blog-post';
         postEl.innerHTML = `
@@ -1121,15 +1169,15 @@
             ${post.comments.map((comment, cIndex) => `
               <div class="comment">
                 ${comment.text}
-                <button class="delete-comment-btn" data-post-index="${index}" data-comment-index="${cIndex}">Excluir</button>
+                <button class="delete-comment-btn" data-post-id="${post.id}" data-comment-index="${cIndex}">Excluir</button>
               </div>
             `).join('')}
           </div>
-          <button class="add-comment" data-post-index="${index}">Adicionar Comentário</button>
+          <button class="add-comment" data-post-id="${post.id}">Adicionar Comentário</button>
         `;
         postEl.addEventListener('click', (e) => {
           if (!e.target.classList.contains('add-comment') && !e.target.classList.contains('delete-comment-btn')) {
-            openPostModal(index);
+            openPostModal(post.id);
           }
         });
         blogPosts.appendChild(postEl);
@@ -1137,16 +1185,16 @@
 
       document.querySelectorAll('.add-comment').forEach(button => {
         button.addEventListener('click', () => {
-          const postIndex = parseInt(button.dataset.postIndex);
-          openCommentModal(postIndex);
+          const postId = button.dataset.postId;
+          openCommentModal(postId);
         });
       });
 
       document.querySelectorAll('.delete-comment-btn').forEach(button => {
         button.addEventListener('click', () => {
-          const postIndex = parseInt(button.dataset.postIndex);
+          const postId = button.dataset.postId;
           const commentIndex = parseInt(button.dataset.commentIndex);
-          deleteComment(postIndex, commentIndex);
+          deleteComment(postId, commentIndex);
         });
       });
     }
@@ -1232,8 +1280,8 @@
       document.getElementById('post-title').focus();
     }
 
-    function openCommentModal(postIndex) {
-      selectedPostIndex = postIndex;
+    function openCommentModal(postId) {
+      selectedPostId = postId;
       modalTitle.textContent = 'Adicionar Comentário';
       modalBody.innerHTML = `
         <form id="comment-form" novalidate>
@@ -1254,9 +1302,9 @@
       document.getElementById('comment-text').focus();
     }
 
-    function openPostModal(index) {
-      const post = posts[index];
-      selectedPostIndex = index;
+    function openPostModal(postId) {
+      const post = posts.find(p => p.id === postId);
+      selectedPostId = postId;
       modalTitle.textContent = 'Detalhes do Post';
       modalBody.innerHTML = `
         <h4>${post.title}</h4>
@@ -1270,7 +1318,7 @@
       modal.classList.add('active');
       const btnDelete = document.getElementById('btn-delete');
       const btnClose = document.getElementById('btn-close');
-      btnDelete.addEventListener('click', () => handlePostDelete(index));
+      btnDelete.addEventListener('click', () => handlePostDelete(postId));
       btnClose.addEventListener('click', closeModal);
     }
 
@@ -1294,7 +1342,7 @@
       btnClose.addEventListener('click', closeModal);
     }
 
-    function handleEventSubmit(e) {
+    async function handleEventSubmit(e) {
       e.preventDefault();
       const errorMsg = document.getElementById('error-msg');
       errorMsg.textContent = '';
@@ -1313,15 +1361,26 @@
         return;
       }
 
-      if (!events[date]) events[date] = [];
-      events[date].push({ name, startTime, endTime });
-      localStorage.setItem('chroma-events', JSON.stringify(events));
-      closeModal();
-      renderCalendar();
-      renderEventSidebar(date);
+      try {
+        if (!events[date]) events[date] = [];
+        events[date].push({ name, startTime, endTime });
+        const response = await fetch(`${API_BASE_URL}/events`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ events })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        localStorage.setItem('chroma-events-cache', JSON.stringify(events));
+        closeModal();
+        renderCalendar();
+        renderEventSidebar(date);
+      } catch (error) {
+        console.error('Erro ao salvar evento:', error.message, error.stack);
+        errorMsg.textContent = 'Falha ao salvar evento: ' + error.message;
+      }
     }
 
-    function handlePostSubmit(e) {
+    async function handlePostSubmit(e) {
       e.preventDefault();
       const errorMsg = document.getElementById('error-msg');
       errorMsg.textContent = '';
@@ -1334,13 +1393,27 @@
       }
 
       const date = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      posts.push({ title, content, date, comments: [] });
-      localStorage.setItem('chroma-posts', JSON.stringify(posts));
-      closeModal();
-      renderBlogPosts();
+      const newPost = { title, content, date, comments: [] };
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/posts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newPost)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const savedPost = await response.json();
+        posts.push(savedPost);
+        localStorage.setItem('chroma-posts-cache', JSON.stringify(posts));
+        closeModal();
+        renderBlogPosts();
+      } catch (error) {
+        console.error('Erro ao salvar post:', error.message, error.stack);
+        errorMsg.textContent = 'Falha ao salvar post: ' + error.message;
+      }
     }
 
-    function handleCommentSubmit(e) {
+    async function handleCommentSubmit(e) {
       e.preventDefault();
       const errorMsg = document.getElementById('error-msg');
       errorMsg.textContent = '';
@@ -1351,34 +1424,78 @@
         return;
       }
 
-      posts[selectedPostIndex].comments.push({ text });
-      localStorage.setItem('chroma-posts', JSON.stringify(posts));
-      closeModal();
-      renderBlogPosts();
-    }
-
-    function handleEventDelete() {
-      events[selectedDateKey].splice(selectedEventIndex, 1);
-      if (events[selectedDateKey].length === 0) {
-        delete events[selectedDateKey];
+      try {
+        const post = posts.find(p => p.id === selectedPostId);
+        post.comments.push({ text });
+        const response = await fetch(`${API_BASE_URL}/posts/${selectedPostId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(post)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        localStorage.setItem('chroma-posts-cache', JSON.stringify(posts));
+        closeModal();
+        renderBlogPosts();
+      } catch (error) {
+        console.error('Erro ao salvar comentário:', error.message, error.stack);
+        errorMsg.textContent = 'Falha ao salvar comentário: ' + error.message;
       }
-      localStorage.setItem('chroma-events', JSON.stringify(events));
-      closeModal();
-      renderCalendar();
-      renderEventSidebar(selectedDateKey);
     }
 
-    function handlePostDelete(index) {
-      posts.splice(index, 1);
-      localStorage.setItem('chroma-posts', JSON.stringify(posts));
-      closeModal();
-      renderBlogPosts();
+    async function handleEventDelete() {
+      try {
+        events[selectedDateKey].splice(selectedEventIndex, 1);
+        if (events[selectedDateKey].length === 0) {
+          delete events[selectedDateKey];
+        }
+        const response = await fetch(`${API_BASE_URL}/events`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ events })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        localStorage.setItem('chroma-events-cache', JSON.stringify(events));
+        closeModal();
+        renderCalendar();
+        renderEventSidebar(selectedDateKey);
+      } catch (error) {
+        console.error('Erro ao deletar evento:', error.message, error.stack);
+        alert('Falha ao deletar evento: ' + error.message);
+      }
     }
 
-    function deleteComment(postIndex, commentIndex) {
-      posts[postIndex].comments.splice(commentIndex, 1);
-      localStorage.setItem('chroma-posts', JSON.stringify(posts));
-      renderBlogPosts();
+    async function handlePostDelete(postId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        posts = posts.filter(p => p.id !== postId);
+        localStorage.setItem('chroma-posts-cache', JSON.stringify(posts));
+        closeModal();
+        renderBlogPosts();
+      } catch (error) {
+        console.error('Erro ao deletar post:', error.message, error.stack);
+        alert('Falha ao deletar post: ' + error.message);
+      }
+    }
+
+    async function deleteComment(postId, commentIndex) {
+      try {
+        const post = posts.find(p => p.id === postId);
+        post.comments.splice(commentIndex, 1);
+        const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(post)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        localStorage.setItem('chroma-posts-cache', JSON.stringify(posts));
+        renderBlogPosts();
+      } catch (error) {
+        console.error('Erro ao deletar comentário:', error.message, error.stack);
+        alert('Falha ao deletar comentário: ' + error.message);
+      }
     }
 
     function closeModal() {
