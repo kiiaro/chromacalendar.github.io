@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ChromaSolar Minimalista</title>
+  <title>ChromaBlog e Calendar</title>
   <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@100;300;400;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <style>
@@ -25,6 +25,89 @@
       box-sizing: border-box;
     }
 
+    /* Tela de carregamento */
+    .loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20000;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-logo {
+      width: 100px;
+      height: 100px;
+      animation: pulseLogo 1.2s ease-in-out infinite;
+    }
+
+    .loader-bar {
+      width: 200px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .loader-bar::after {
+      content: '';
+      display: block;
+      width: 50%;
+      height: 100%;
+      background: #ffffff;
+      animation: loadProgress 1s ease-in-out infinite;
+    }
+
+    @keyframes pulseLogo {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    @keyframes loadProgress {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Partículas de rastros */
+    .trail-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .trail {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #ffffff;
+      border-radius: 50%;
+      opacity: 0.9;
+      animation: trailFade 0.6s ease-out forwards;
+    }
+
+    @keyframes trailFade {
+      0% { opacity: 0.9; transform: translate(0, 0); }
+      100% { opacity: 0; transform: translate(var(--trail-x), var(--trail-y)); }
+    }
+
     body {
       margin: 0;
       padding: 20px;
@@ -35,18 +118,40 @@
       flex-direction: column;
       align-items: center;
       transition: background 0.3s ease, color 0.3s ease;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    body.loaded {
+      opacity: 1;
     }
 
     header {
       width: 100%;
-      height: 80px;
+      height: 120px;
       background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       margin-bottom: 20px;
       position: relative;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      transition: background 0.3s ease;
+    }
+
+    .header-logo {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 10px;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    .header-logo:hover {
+      transform: scale(1.1);
     }
 
     .nav-tabs {
@@ -98,6 +203,7 @@
       align-items: flex-start;
       width: 100%;
       max-width: 1000px;
+      flex-grow: 1;
     }
 
     .calendar, .blog {
@@ -162,7 +268,7 @@
       box-shadow: 0 0 0 3px rgba(254,104,22,0.3);
     }
 
-    #add-event-btn, #add-post-btn {
+    #add-event-btn, #add-post-btn, #show-month-events-btn {
       position: relative;
       background: var(--primary-color);
       border-radius: 25px;
@@ -180,7 +286,7 @@
       height: 50px;
     }
 
-    #add-event-btn::before, #add-post-btn::before {
+    #add-event-btn::before, #add-post-btn::before, #show-month-events-btn::before {
       content: '';
       position: absolute;
       top: 50%;
@@ -194,24 +300,24 @@
       pointer-events: none;
     }
 
-    #add-event-btn:active::before, #add-post-btn:active::before {
+    #add-event-btn:active::before, #add-post-btn:active::before, #show-month-events-btn:active::before {
       width: 200px;
       height: 200px;
       opacity: 0;
     }
 
-    #add-event-btn:hover, #add-post-btn:hover {
+    #add-event-btn:hover, #add-post-btn:hover, #show-month-events-btn:hover {
       background: var(--secondary-color);
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(254,104,22,0.5);
       animation: pulseGlow 1.5s infinite ease-in-out;
     }
 
-    #add-event-btn i, #add-post-btn i {
+    #add-event-btn i, #add-post-btn i, #show-month-events-btn i {
       transition: transform 0.3s ease;
     }
 
-    #add-event-btn:hover i, #add-post-btn:hover i {
+    #add-event-btn:hover i, #add-post-btn:hover i, #show-month-events-btn:hover i {
       transform: rotate(90deg);
     }
 
@@ -773,6 +879,28 @@
       transition: color 0.3s ease;
     }
 
+    /* Estilos para a lista de eventos do mês */
+    .month-events-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .month-event-item {
+      background: linear-gradient(135deg, var(--event-bg) 0%, var(--event-bg-dark) 100%);
+      color: #ffffff;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      transition: transform 0.3s ease;
+    }
+
+    .month-event-item:hover {
+      transform: scale(1.03);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
     .night-mode {
       background: var(--night-bg);
       color: var(--night-text);
@@ -802,7 +930,7 @@
       box-shadow: 0 4px 15px rgba(255,107,107,0.4);
     }
 
-    .night-mode .event, .night-mode .event-card, .night-mode .blog-post {
+    .night-mode .event, .night-mode .event-card, .night-mode .blog-post, .night-mode .month-event-item {
       background: linear-gradient(135deg, var(--night-event-bg) 0%, var(--night-event-text) 100%);
       color: var(--night-text);
     }
@@ -882,6 +1010,10 @@
       background: var(--night-event-text);
     }
 
+    .night-mode .loader {
+      background: linear-gradient(180deg, var(--night-event-bg), var(--night-event-text));
+    }
+
     @media (max-width: 720px) {
       .main-content {
         flex-direction: column;
@@ -933,11 +1065,40 @@
         font-size: 1rem;
         padding: 8px 15px;
       }
+
+      .loader-logo {
+        width: 80px;
+        height: 80px;
+      }
+
+      .loader-bar {
+        width: 150px;
+      }
+
+      header {
+        height: 100px;
+      }
+
+      .header-logo {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 5px;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Tela de carregamento -->
+  <div class="loader">
+    <img src="https://github.com/user-attachments/assets/74d4672a-4bac-4af9-a69d-fd774083425a" alt="ChromaBlog Logo" class="loader-logo">
+    <div class="loader-bar"></div>
+  </div>
+
+  <!-- Container para rastros -->
+  <div class="trail-container" id="trail-container"></div>
+
   <header>
+    <img src="https://github.com/user-attachments/assets/74d4672a-4bac-4af9-a69d-fd774083425a" alt="ChromaBlog Logo" class="header-logo">
     <div class="nav-tabs">
       <button class="nav-tab active" id="blog-tab">Blog</button>
       <button class="nav-tab" id="calendar-tab">Calendário</button>
@@ -953,6 +1114,7 @@
         <button id="prev-month" aria-label="Mês anterior" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
         <div class="month-year" aria-live="polite" aria-atomic="true"></div>
         <button id="next-month" aria-label="Próximo mês" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
+        <button id="show-month-events-btn" aria-label="Mostrar eventos do mês" title="Mostrar eventos do mês"><i class="fas fa-list"></i></button>
         <button id="add-event-btn" aria-label="Adicionar Evento"><i class="fas fa-plus"></i></button>
       </div>
       <div class="days-of-week" role="row">
@@ -991,6 +1153,7 @@
     const nextBtn = document.getElementById('next-month');
     const addEventBtn = document.getElementById('add-event-btn');
     const addPostBtn = document.getElementById('add-post-btn');
+    const showMonthEventsBtn = document.getElementById('show-month-events-btn');
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalBody = document.getElementById('modal-body');
@@ -1004,6 +1167,10 @@
     const blogTab = document.getElementById('blog-tab');
     const calendar = document.querySelector('.calendar');
     const blog = document.querySelector('.blog');
+    const loader = document.querySelector('.loader');
+    const header = document.querySelector('header');
+    const headerLogo = document.querySelector('.header-logo');
+    const trailContainer = document.getElementById('trail-container');
 
     let current = new Date();
     let events = JSON.parse(localStorage.getItem('chroma-events')) || {};
@@ -1012,6 +1179,45 @@
     let selectedEventIndex = null;
     let selectedPostIndex = null;
     let isNightMode = false;
+
+    // Controle da tela de carregamento
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        loader.classList.add('hidden');
+        document.body.classList.add('loaded');
+      }, 1500);
+    });
+
+    // Função para criar rastros
+    function createTrail(x, y) {
+      const trail = document.createElement('div');
+      trail.className = 'trail';
+      trail.style.left = `${x}px`;
+      trail.style.top = `${y}px`;
+      const moveX = (Math.random() - 0.5) * 40;
+      const moveY = (Math.random() - 0.5) * 40;
+      trail.style.setProperty('--trail-x', `${moveX}px`);
+      trail.style.setProperty('--trail-y', `${moveY}px`);
+      trailContainer.appendChild(trail);
+      setTimeout(() => trail.remove(), 600);
+    }
+
+    // Rastros ao clicar na logo
+    headerLogo.addEventListener('click', (e) => {
+      const rect = headerLogo.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => createTrail(x, y), i * 50);
+      }
+    });
+
+    // Rastros ao mover o mouse no header sem alterar o fundo
+    header.addEventListener('mousemove', (e) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      createTrail(x, y);
+    });
 
     function pad(n) {
       return n < 10 ? '0' + n : n;
@@ -1102,6 +1308,64 @@
       } else {
         eventList.innerHTML = '<p>Nenhum evento para este dia.</p>';
       }
+    }
+
+    function openMonthEventsModal() {
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      let monthEvents = [];
+
+      // Coletar todos os eventos do mês
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = getDateKey(year, month + 1, day);
+        if (events[dateKey]) {
+          events[dateKey].forEach((event, index) => {
+            monthEvents.push({
+              dateKey,
+              day,
+              event,
+              index,
+              startTime: event.startTime
+            });
+          });
+        }
+      }
+
+      // Ordenar eventos por data e hora
+      monthEvents.sort((a, b) => {
+        if (a.day === b.day) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        return a.day - b.day;
+      });
+
+      modalTitle.textContent = 'Eventos do Mês';
+      modalBody.innerHTML = `
+        <div class="month-events-list">
+          ${monthEvents.length > 0 ? monthEvents.map(({ dateKey, day, event, index }) => `
+            <div class="month-event-item" data-date-key="${dateKey}" data-event-index="${index}">
+              <strong>${pad(day)}/${pad(month + 1)}/${year}</strong>: ${event.name} (${event.startTime} - ${event.endTime})
+            </div>
+          `).join('') : '<p>Nenhum evento neste mês.</p>'}
+        </div>
+        <div class="actions">
+          <button type="button" id="btn-close">Fechar</button>
+        </div>
+      `;
+      modal.classList.add('active');
+
+      // Adicionar evento de clique nos itens
+      document.querySelectorAll('.month-event-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const dateKey = item.dataset.dateKey;
+          const eventIndex = parseInt(item.dataset.eventIndex);
+          openEventModal(dateKey, eventIndex);
+        });
+      });
+
+      const btnClose = document.getElementById('btn-close');
+      btnClose.addEventListener('click', closeModal);
     }
 
     function renderBlogPosts() {
@@ -1391,6 +1655,10 @@
       document.body.classList.toggle('night-mode', isNightMode);
       iconDay.style.display = isNightMode ? 'none' : 'block';
       iconNight.style.display = isNightMode ? 'block' : 'none';
+      // Ajustar o fundo do header ao alternar o modo
+      header.style.background = isNightMode
+        ? 'linear-gradient(90deg, var(--night-event-bg), var(--night-event-text))'
+        : 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))';
       if (calendar.classList.contains('active')) {
         renderCalendar();
       } else {
@@ -1428,6 +1696,8 @@
         alert('Por favor, selecione um dia no calendário.');
       }
     });
+
+    showMonthEventsBtn.addEventListener('click', openMonthEventsModal);
 
     addPostBtn.addEventListener('click', openCreatePostModal);
 
