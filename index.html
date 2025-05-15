@@ -846,14 +846,14 @@
       transform: translateY(-2px);
     }
 
-    #btn-cancel, #btn-close {
+    #btn-cancel, #btn-close, #btn-edit {
       background: transparent;
       color: var(--primary-color);
       border: 2px solid var(--primary-color);
       transition: color 0.3s ease, border-color 0.3s ease;
     }
 
-    #btn-cancel:hover, #btn-close:hover {
+    #btn-cancel:hover, #btn-close:hover, #btn-edit:hover {
       background: var(--primary-color);
       color: #ffffff;
     }
@@ -1002,12 +1002,12 @@
       color: #888;
     }
 
-    .night-mode #btn-cancel, .night-mode #btn-close {
+    .night-mode #btn-cancel, .night-mode #btn-close, .night-mode #btn-edit {
       border-color: var(--night-event-text);
       color: var(--night-event-text);
     }
 
-    .night-mode #btn-cancel:hover, .night-mode #btn-close:hover {
+    .night-mode #btn-cancel:hover, .night-mode #btn-close:hover, .night-mode #btn-edit:hover {
       background: var(--night-event-text);
       color: var(--night-bg);
     }
@@ -1278,12 +1278,14 @@
 
         // Verificar se o dia está no intervalo de algum evento
         let isInEventRange = false;
+        const eventsForDay = [];
         for (const startDateKey in events) {
           events[startDateKey].forEach((event, index) => {
             const eventStartDate = new Date(startDateKey);
             const eventEndDate = event.endDate ? new Date(event.endDate) : eventStartDate;
             if (isDateInRange(currentDate, eventStartDate, eventEndDate)) {
               isInEventRange = true;
+              eventsForDay.push({ event, startDateKey, index });
             }
           });
         }
@@ -1299,29 +1301,27 @@
         eventsDiv.className = 'events';
         dayEl.appendChild(eventsDiv);
 
-        // Renderizar eventos apenas no dia de início
-        if (events[dateKey]) {
-          events[dateKey].sort((a, b) => a.startTime.localeCompare(b.startTime));
-          events[dateKey].forEach((event, index) => {
-            const evt = document.createElement('div');
-            evt.className = 'event';
-            let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
-            if (event.endDate) {
-              tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
-            }
-            evt.setAttribute('data-full', tooltipText);
-            let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
-            evt.textContent = displayText;
-            evt.addEventListener('click', (e) => {
-              e.stopPropagation();
-              openEventModal(dateKey, index);
-            });
-            eventsDiv.appendChild(evt);
+        // Renderizar eventos para o dia atual
+        eventsForDay.forEach(({ event, startDateKey, index }) => {
+          const evt = document.createElement('div');
+          evt.className = 'event';
+          let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
+          if (event.endDate) {
+            tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
+          }
+          evt.setAttribute('data-full', tooltipText);
+          let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
+          evt.textContent = displayText;
+          evt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEventModal(startDateKey, index);
           });
-          dayEl.addEventListener('mouseover', () => {
-            renderEventSidebar(dateKey);
-          });
-        }
+          eventsDiv.appendChild(evt);
+        });
+
+        dayEl.addEventListener('mouseover', () => {
+          renderEventSidebar(dateKey);
+        });
 
         dayEl.addEventListener('click', (e) => {
           if (!e.target.classList.contains('event')) {
@@ -1506,7 +1506,7 @@
       let isEndDateVisible = false;
 
       btnCancel.addEventListener('click', closeModal);
-      form.addEventListener('submit', handleEventSubmit);
+      form.addEventListener('submit', (e) => handleEventSubmit(e, false));
       toggleEndDateBtn.addEventListener('click', () => {
         isEndDateVisible = !isEndDateVisible;
         toggleEndDateBtn.style.transform = 'scale(0)';
@@ -1521,6 +1521,66 @@
           endDateContainer.classList.remove('visible');
           setTimeout(() => {
             endDateContainer.style.display = 'none';
+          }, 300);
+        }
+      });
+
+      document.getElementById('event-name').focus();
+    }
+
+    function openEditEventModal(dateKey, eventIndex) {
+      const event = events[dateKey][eventIndex];
+      modalTitle.textContent = 'Editar Evento';
+      modalBody.innerHTML = `
+        <form id="event-form" novalidate>
+          <label for="event-name">Nome do Evento</label>
+          <input type="text" id="event-name" name="event-name" required autocomplete="off" placeholder="Insira o nome do evento" maxlength="60" value="${event.name}" />
+          <div class="date-group">
+            <div>
+              <label for="event-date">Data Início</label>
+              <input type="date" id="event-date" name="event-date" required value="${dateKey}" />
+            </div>
+            <button type="button" id="toggle-end-date"><i class="${event.endDate ? 'fas fa-chevron-left' : 'fas fa-chevron-right'}"></i></button>
+            <div id="end-date-container" class="${event.endDate ? 'visible' : ''}" style="display: ${event.endDate ? 'block' : 'none'};">
+              <label for="end-date">Data Término</label>
+              <input type="date" id="end-date" name="end-date" value="${event.endDate || ''}" />
+            </div>
+          </div>
+          <label for="start-time">Hora Início</label>
+          <input type="time" id="start-time" name="start-time" required value="${event.startTime}" />
+          <label for="end-time">Hora Término</label>
+          <input type="time" id="end-time" name="end-time" required value="${event.endTime}" />
+          <div id="error-msg" aria-live="assertive"></div>
+          <div class="actions">
+            <button type="button" id="btn-cancel">Cancelar</button>
+            <button type="submit" id="btn-save">Salvar</button>
+          </div>
+        </form>
+      `;
+      modal.classList.add('active');
+      const form = document.getElementById('event-form');
+      const btnCancel = document.getElementById('btn-cancel');
+      const toggleEndDateBtn = document.getElementById('toggle-end-date');
+      const endDateContainer = document.getElementById('end-date-container');
+      let isEndDateVisible = !!event.endDate;
+
+      btnCancel.addEventListener('click', closeModal);
+      form.addEventListener('submit', (e) => handleEventSubmit(e, true, dateKey, eventIndex));
+      toggleEndDateBtn.addEventListener('click', () => {
+        isEndDateVisible = !isEndDateVisible;
+        toggleEndDateBtn.style.transform = 'scale(0)';
+        setTimeout(() => {
+          toggleEndDateBtn.innerHTML = isEndDateVisible ? '<i class="fas fa-chevron-left"></i>' : '<i class="fas fa-chevron-right"></i>';
+          toggleEndDateBtn.style.transform = 'scale(1)';
+        }, 150);
+        if (isEndDateVisible) {
+          endDateContainer.classList.add('visible');
+          endDateContainer.style.display = 'block';
+        } else {
+          endDateContainer.classList.remove('visible');
+          setTimeout(() => {
+            endDateContainer.style.display = 'none';
+            document.getElementById('end-date').value = '';
           }, 300);
         }
       });
@@ -1604,18 +1664,21 @@
         ${event.endDate ? `<p><strong>Data Término:</strong> ${event.endDate.split('-').reverse().join('/')}</p>` : ''}
         <p><strong>Horário:</strong> ${event.startTime} - ${event.endTime}</p>
         <div class="actions">
+          <button type="button" id="btn-edit">Editar</button>
           <button type="button" id="btn-delete">Apagar</button>
           <button type="button" id="btn-close">Fechar</button>
         </div>
       `;
       modal.classList.add('active');
+      const btnEdit = document.getElementById('btn-edit');
       const btnDelete = document.getElementById('btn-delete');
       const btnClose = document.getElementById('btn-close');
+      btnEdit.addEventListener('click', () => openEditEventModal(dateKey, eventIndex));
       btnDelete.addEventListener('click', handleEventDelete);
       btnClose.addEventListener('click', closeModal);
     }
 
-    function handleEventSubmit(e) {
+    function handleEventSubmit(e, isEdit, oldDateKey, eventIndex) {
       e.preventDefault();
       const errorMsg = document.getElementById('error-msg');
       errorMsg.textContent = '';
@@ -1640,10 +1703,24 @@
         return;
       }
 
-      if (!events[date]) events[date] = [];
       const event = { name, startTime, endTime };
       if (endDate) event.endDate = endDate;
-      events[date].push(event);
+
+      if (isEdit) {
+        // Remover o evento antigo
+        events[oldDateKey].splice(eventIndex, 1);
+        if (events[oldDateKey].length === 0) {
+          delete events[oldDateKey];
+        }
+        // Adicionar o evento na nova data
+        if (!events[date]) events[date] = [];
+        events[date].push(event);
+      } else {
+        // Criar novo evento
+        if (!events[date]) events[date] = [];
+        events[date].push(event);
+      }
+
       localStorage.setItem('chroma-events', JSON.stringify(events));
       closeModal();
       renderCalendar();
