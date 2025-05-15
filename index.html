@@ -420,6 +420,15 @@
       box-shadow: 0 0 15px rgba(254,104,22,0.3);
     }
 
+    .day.event-range {
+      background-color: var(--event-bg);
+      border-color: var(--event-bg-dark);
+    }
+
+    .day.event-range .day-number {
+      color: #ffffff;
+    }
+
     .day-number {
       font-weight: 700;
       margin-bottom: 5px;
@@ -915,7 +924,7 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    .night-mode .month-year, .night-mode .days-of-week div, .night-mode .day-number, .night-mode .blog-header h2 {
+    .night-mode .month-year, .night-mode .days-of-week div, .night-mode .day-number {
       color: var(--night-event-text);
     }
 
@@ -938,6 +947,15 @@
     .night-mode .event:hover {
       background: var(--night-event-text);
       color: var(--night-event-bg);
+    }
+
+    .night-mode .day.event-range {
+      background-color: var(--night-event-text);
+      border-color: var(--night-event-bg);
+    }
+
+    .night-mode .day.event-range .day-number {
+      color: #ffffff;
     }
 
     .night-mode .blog-post .comment {
@@ -1227,6 +1245,14 @@
       return year + '-' + pad(month) + '-' + pad(day);
     }
 
+    // Função auxiliar para verificar se uma data está no intervalo
+    function isDateInRange(date, startDate, endDate) {
+      const d = new Date(date);
+      const s = new Date(startDate);
+      const e = endDate ? new Date(endDate) : s;
+      return d >= s && d <= e;
+    }
+
     function renderCalendar() {
       daysContainer.innerHTML = '';
       const year = current.getFullYear();
@@ -1245,9 +1271,26 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateKey = getDateKey(year, month + 1, day);
+        const currentDate = new Date(year, month, day);
         const dayEl = document.createElement('div');
         dayEl.className = 'day';
         dayEl.tabIndex = 0;
+
+        // Verificar se o dia está no intervalo de algum evento
+        let isInEventRange = false;
+        for (const startDateKey in events) {
+          events[startDateKey].forEach((event, index) => {
+            const eventStartDate = new Date(startDateKey);
+            const eventEndDate = event.endDate ? new Date(event.endDate) : eventStartDate;
+            if (isDateInRange(currentDate, eventStartDate, eventEndDate)) {
+              isInEventRange = true;
+            }
+          });
+        }
+        if (isInEventRange) {
+          dayEl.classList.add('event-range');
+        }
+
         const dayNumberDiv = document.createElement('div');
         dayNumberDiv.className = 'day-number';
         dayNumberDiv.textContent = day;
@@ -1256,12 +1299,16 @@
         eventsDiv.className = 'events';
         dayEl.appendChild(eventsDiv);
 
+        // Renderizar eventos apenas no dia de início
         if (events[dateKey]) {
           events[dateKey].sort((a, b) => a.startTime.localeCompare(b.startTime));
           events[dateKey].forEach((event, index) => {
             const evt = document.createElement('div');
             evt.className = 'event';
             let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
+            if (event.endDate) {
+              tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
+            }
             evt.setAttribute('data-full', tooltipText);
             let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
             evt.textContent = displayText;
@@ -1297,15 +1344,23 @@
 
     function renderEventSidebar(dateKey) {
       eventList.innerHTML = '';
-      if (events[dateKey]) {
-        events[dateKey].forEach((event, index) => {
-          const card = document.createElement('div');
-          card.className = 'event-card';
-          card.innerHTML = `${event.startTime} - ${event.endTime}: ${event.name}`;
-          card.addEventListener('click', () => openEventModal(dateKey, index));
-          eventList.appendChild(card);
+      let hasEvents = false;
+      const currentDate = new Date(dateKey);
+      for (const startDateKey in events) {
+        events[startDateKey].forEach((event, index) => {
+          const eventStartDate = new Date(startDateKey);
+          const eventEndDate = event.endDate ? new Date(event.endDate) : eventStartDate;
+          if (isDateInRange(currentDate, eventStartDate, eventEndDate)) {
+            hasEvents = true;
+            const card = document.createElement('div');
+            card.className = 'event-card';
+            card.innerHTML = `${event.startTime} - ${event.endTime}: ${event.name}${event.endDate ? ` (até ${event.endDate.split('-').reverse().join('/')})` : ''}`;
+            card.addEventListener('click', () => openEventModal(startDateKey, index));
+            eventList.appendChild(card);
+          }
         });
-      } else {
+      }
+      if (!hasEvents) {
         eventList.innerHTML = '<p>Nenhum evento para este dia.</p>';
       }
     }
@@ -1317,13 +1372,13 @@
       let monthEvents = [];
 
       // Coletar todos os eventos do mês
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateKey = getDateKey(year, month + 1, day);
-        if (events[dateKey]) {
+      for (const dateKey in events) {
+        const eventDate = new Date(dateKey);
+        if (eventDate.getFullYear() === year && eventDate.getMonth() === month) {
           events[dateKey].forEach((event, index) => {
             monthEvents.push({
               dateKey,
-              day,
+              day: eventDate.getDate(),
               event,
               index,
               startTime: event.startTime
@@ -1345,7 +1400,7 @@
         <div class="month-events-list">
           ${monthEvents.length > 0 ? monthEvents.map(({ dateKey, day, event, index }) => `
             <div class="month-event-item" data-date-key="${dateKey}" data-event-index="${index}">
-              <strong>${pad(day)}/${pad(month + 1)}/${year}</strong>: ${event.name} (${event.startTime} - ${event.endTime})
+              <strong>${pad(day)}/${pad(month + 1)}/${year}</strong>: ${event.name} (${event.startTime} - ${event.endTime})${event.endDate ? ` até ${event.endDate.split('-').reverse().join('/')}` : ''}
             </div>
           `).join('') : '<p>Nenhum evento neste mês.</p>'}
         </div>
@@ -1545,6 +1600,8 @@
       modalTitle.textContent = 'Detalhes do Evento';
       modalBody.innerHTML = `
         <p><strong>Nome:</strong> ${event.name}</p>
+        <p><strong>Data Início:</strong> ${dateKey.split('-').reverse().join('/')}</p>
+        ${event.endDate ? `<p><strong>Data Término:</strong> ${event.endDate.split('-').reverse().join('/')}</p>` : ''}
         <p><strong>Horário:</strong> ${event.startTime} - ${event.endTime}</p>
         <div class="actions">
           <button type="button" id="btn-delete">Apagar</button>
@@ -1564,6 +1621,7 @@
       errorMsg.textContent = '';
       const name = document.getElementById('event-name').value.trim();
       const date = document.getElementById('event-date').value;
+      const endDate = document.getElementById('end-date').value;
       const startTime = document.getElementById('start-time').value;
       const endTime = document.getElementById('end-time').value;
 
@@ -1577,8 +1635,15 @@
         return;
       }
 
+      if (endDate && endDate < date) {
+        errorMsg.textContent = 'A data de término deve ser igual ou posterior à data de início.';
+        return;
+      }
+
       if (!events[date]) events[date] = [];
-      events[date].push({ name, startTime, endTime });
+      const event = { name, startTime, endTime };
+      if (endDate) event.endDate = endDate;
+      events[date].push(event);
       localStorage.setItem('chroma-events', JSON.stringify(events));
       closeModal();
       renderCalendar();
@@ -1655,7 +1720,6 @@
       document.body.classList.toggle('night-mode', isNightMode);
       iconDay.style.display = isNightMode ? 'none' : 'block';
       iconNight.style.display = isNightMode ? 'block' : 'none';
-      // Ajustar o fundo do header ao alternar o modo
       header.style.background = isNightMode
         ? 'linear-gradient(90deg, var(--night-event-bg), var(--night-event-text))'
         : 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))';
