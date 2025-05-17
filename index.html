@@ -492,7 +492,7 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: var(--primary-color);
+      background: var(--primary-color BODY: );
       border-radius: 20px;
     }
 
@@ -1248,9 +1248,10 @@
 
     // Função auxiliar para verificar se uma data está no intervalo
     function isDateInRange(date, startDate, endDate) {
-      const d = new Date(date);
-      const s = new Date(startDate);
-      const e = endDate ? new Date(endDate) : s;
+      // Normalizar datas para comparar apenas ano, mês e dia
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const s = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const e = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : s;
       return d >= s && d <= e;
     }
 
@@ -1266,7 +1267,7 @@
 
       for (let i = 0; i < startDay; i++) {
         const blank = document.createElement('div');
-        blank.className = 'day';
+        blank.className = 'day  day';
         daysContainer.appendChild(blank);
       }
 
@@ -1290,6 +1291,7 @@
             }
           });
         }
+
         if (isInEventRange) {
           dayEl.classList.add('event-range');
           // Aplicar a cor do primeiro evento como fundo (pode ser ajustado para múltiplos eventos)
@@ -1306,24 +1308,26 @@
         eventsDiv.className = 'events';
         dayEl.appendChild(eventsDiv);
 
-        // Renderizar eventos para o dia atual
-        eventsForDay.forEach(({ event, startDateKey, index }) => {
-          const evt = document.createElement('div');
-          evt.className = 'event';
-          evt.style.backgroundColor = event.color;
-          let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
-          if (event.endDate) {
-            tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
-          }
-          evt.setAttribute('data-full', tooltipText);
-          let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
-          evt.textContent = displayText;
-          evt.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openEventModal(startDateKey, index);
+        // Renderizar eventos apenas no dia de início
+        if (events[dateKey]) {
+          events[dateKey].forEach((event, index) => {
+            const evt = document.createElement('div');
+            evt.className = 'event';
+            evt.style.backgroundColor = event.color;
+            let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
+            if (event.endDate) {
+              tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
+            }
+            evt.setAttribute('data-full', tooltipText);
+            let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
+            evt.textContent = displayText;
+            evt.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openEventModal(dateKey, index);
+            });
+            eventsDiv.appendChild(evt);
           });
-          eventsDiv.appendChild(evt);
-        });
+        }
 
         dayEl.addEventListener('mouseover', () => {
           renderEventSidebar(dateKey);
