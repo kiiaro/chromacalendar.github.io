@@ -492,7 +492,7 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: var(--primary-color BODY: );
+      background: var(--primary-color);
       border-radius: 20px;
     }
 
@@ -1248,7 +1248,6 @@
 
     // Função auxiliar para verificar se uma data está no intervalo
     function isDateInRange(date, startDate, endDate) {
-      // Normalizar datas para comparar apenas ano, mês e dia
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const s = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
       const e = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : s;
@@ -1267,7 +1266,7 @@
 
       for (let i = 0; i < startDay; i++) {
         const blank = document.createElement('div');
-        blank.className = 'day  day';
+        blank.className = 'day';
         daysContainer.appendChild(blank);
       }
 
@@ -1278,7 +1277,7 @@
         dayEl.className = 'day';
         dayEl.tabIndex = 0;
 
-        // Verificar se o dia está no intervalo de algum evento
+        // Coletar todos os eventos aplicáveis ao dia
         let isInEventRange = false;
         const eventsForDay = [];
         for (const startDateKey in events) {
@@ -1294,7 +1293,7 @@
 
         if (isInEventRange) {
           dayEl.classList.add('event-range');
-          // Aplicar a cor do primeiro evento como fundo (pode ser ajustado para múltiplos eventos)
+          // Aplicar a cor do primeiro evento como fundo
           if (eventsForDay.length > 0) {
             dayEl.style.backgroundColor = eventsForDay[0].event.color;
           }
@@ -1308,26 +1307,24 @@
         eventsDiv.className = 'events';
         dayEl.appendChild(eventsDiv);
 
-        // Renderizar eventos apenas no dia de início
-        if (events[dateKey]) {
-          events[dateKey].forEach((event, index) => {
-            const evt = document.createElement('div');
-            evt.className = 'event';
-            evt.style.backgroundColor = event.color;
-            let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
-            if (event.endDate) {
-              tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
-            }
-            evt.setAttribute('data-full', tooltipText);
-            let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
-            evt.textContent = displayText;
-            evt.addEventListener('click', (e) => {
-              e.stopPropagation();
-              openEventModal(dateKey, index);
-            });
-            eventsDiv.appendChild(evt);
+        // Renderizar todos os eventos aplicáveis ao dia
+        eventsForDay.forEach(({ event, startDateKey, index }) => {
+          const evt = document.createElement('div');
+          evt.className = 'event';
+          evt.style.backgroundColor = event.color;
+          let tooltipText = `Nome: ${event.name}\nHorário: ${event.startTime} - ${event.endTime}`;
+          if (event.endDate) {
+            tooltipText += `\nData Término: ${event.endDate.split('-').reverse().join('/')}`;
+          }
+          evt.setAttribute('data-full', tooltipText);
+          let displayText = event.name.length > 16 ? event.name.substring(0, 16) + '…' : event.name;
+          evt.textContent = displayText;
+          evt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEventModal(startDateKey, index);
           });
-        }
+          eventsDiv.appendChild(evt);
+        });
 
         dayEl.addEventListener('mouseover', () => {
           renderEventSidebar(dateKey);
@@ -1356,21 +1353,30 @@
       eventList.innerHTML = '';
       let hasEvents = false;
       const currentDate = new Date(dateKey);
+      const eventsForDay = [];
+
+      // Coletar todos os eventos aplicáveis ao dia
       for (const startDateKey in events) {
         events[startDateKey].forEach((event, index) => {
           const eventStartDate = new Date(startDateKey);
           const eventEndDate = event.endDate ? new Date(event.endDate) : eventStartDate;
           if (isDateInRange(currentDate, eventStartDate, eventEndDate)) {
             hasEvents = true;
-            const card = document.createElement('div');
-            card.className = 'event-card';
-            card.style.backgroundColor = event.color;
-            card.innerHTML = `${event.startTime} - ${event.endTime}: ${event.name}${event.endDate ? ` (até ${event.endDate.split('-').reverse().join('/')})` : ''}`;
-            card.addEventListener('click', () => openEventModal(startDateKey, index));
-            eventList.appendChild(card);
+            eventsForDay.push({ event, startDateKey, index });
           }
         });
       }
+
+      // Renderizar eventos na sidebar
+      eventsForDay.forEach(({ event, startDateKey, index }) => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        card.style.backgroundColor = event.color;
+        card.innerHTML = `${event.startTime} - ${event.endTime}: ${event.name}${event.endDate ? ` (até ${event.endDate.split('-').reverse().join('/')})` : ''}`;
+        card.addEventListener('click', () => openEventModal(startDateKey, index));
+        eventList.appendChild(card);
+      });
+
       if (!hasEvents) {
         eventList.innerHTML = '<p>Nenhum evento para este dia.</p>';
       }
@@ -1383,17 +1389,22 @@
       let monthEvents = [];
 
       // Coletar todos os eventos do mês
-      for (const dateKey in events) {
-        const eventDate = new Date(dateKey);
-        if (eventDate.getFullYear() === year && eventDate.getMonth() === month) {
-          events[dateKey].forEach((event, index) => {
-            monthEvents.push({
-              dateKey,
-              day: eventDate.getDate(),
-              event,
-              index,
-              startTime: event.startTime
-            });
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = getDateKey(year, month + 1, day);
+        const currentDate = new Date(year, month, day);
+        for (const startDateKey in events) {
+          events[startDateKey].forEach((event, index) => {
+            const eventStartDate = new Date(startDateKey);
+            const eventEndDate = event.endDate ? new Date(event.endDate) : eventStartDate;
+            if (isDateInRange(currentDate, eventStartDate, eventEndDate)) {
+              monthEvents.push({
+                dateKey: startDateKey,
+                day,
+                event,
+                index,
+                startTime: event.startTime
+              });
+            }
           });
         }
       }
